@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<head>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body>
+  <script>
+    const canvas = document.createElement('canvas')
+    const ctx = canvas.getContext('2d')
+
+    const PEN_BLUE = '#4545FF'
+    const LIGHT_BLUE = '#d0d0ff'
+    const LIGHT_GRAY = '#EEEEEE'
+    const PEN_COLOR = '#6FCF97'
+    const MONTH_BORDER_COLOR = 'black'
+
+    const CELL_EDGE = 40
+    const columns = 4
+    const rows = 8
+    const SLAB_WIDTH = CELL_EDGE / columns
+    const SLAB_HEIGHT = CELL_EDGE / rows
+    const FONT_SIZE = CELL_EDGE / 5
+    const LINE_WIDTH = Math.floor(CELL_EDGE / 26)
+    const monthMargin = SLAB_WIDTH
+    const simulationEnabled = false
+
+    const dayNames = [,'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+
+    function render (devicePixelRatio) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+      ctx.save()
+      ctx.scale(devicePixelRatio, devicePixelRatio)
+      ctx.translate(CELL_EDGE, CELL_EDGE)
+
+      // day names
+      for (let d = 0; d < 7; ++d) {
+        const dayName = dayNames[d + 1]
+        ctx.fillStyle = PEN_BLUE
+        ctx.font = `${FONT_SIZE}px monospace`
+        ctx.textBaseline = 'bottom'
+        ctx.fillText(
+          dayName,
+          d * CELL_EDGE + (FONT_SIZE / 2),
+          -(FONT_SIZE / 1.5)
+        )
+      }
+
+      // start on first day of current week
+      const initialDate = new Date()
+      initialDate.setDate(initialDate.getDate() - initialDate.getDay() + 1)
+
+      // background && frame
+      let currentDate = new Date(initialDate)
+      ctx.save()
+      for (let i = 0; i < 15; ++i) {
+        for (let j = 0; j < 7; ++j) {
+          const day = currentDate.getDate()
+          if (day === 1 && i + j !== 0) ctx.translate(monthMargin, monthMargin)
+
+          ctx.save()
+          ctx.translate(j * CELL_EDGE, i * CELL_EDGE)
+
+          ctx.fillStyle = LIGHT_GRAY
+          let workDone = Math.random() * columns * rows * 1.5
+          for (let ii = rows - 1; ii >= 0; --ii) {
+            for (let jj = 0; jj < columns; jj++) {
+              // gray hint
+              if ((ii + jj) % 2 == 1) {
+                ctx.fillStyle = LIGHT_GRAY
+                ctx.fillRect(
+                  SLAB_WIDTH * jj,
+                  SLAB_HEIGHT * ii,
+                  SLAB_WIDTH,
+                  SLAB_HEIGHT
+                )
+              }
+
+              if (simulationEnabled && workDone > 0) {
+                workDone--
+                ctx.fillStyle = PEN_BLUE
+                ctx.fillRect(
+                  SLAB_WIDTH * jj,
+                  SLAB_HEIGHT * ii,
+                  SLAB_WIDTH,
+                  SLAB_HEIGHT
+                )
+              }
+            }
+          }
+
+          // frame
+          ctx.strokeStyle = LIGHT_BLUE
+          ctx.lineWidth = LINE_WIDTH
+          ctx.strokeRect(0, 0, CELL_EDGE, CELL_EDGE)
+
+          ctx.restore()
+          currentDate.setDate(day + 1)
+        }
+      }
+      ctx.restore()
+
+      currentDate = new Date(initialDate)
+      for (let i = 0; i < 15; ++i) {
+        for (let j = 0; j < 7; ++j) {
+          const day = currentDate.getDate()
+          if (day === 1 && i + j !== 0) ctx.translate(monthMargin, monthMargin)
+
+          ctx.save()
+          ctx.translate(j * CELL_EDGE, i * CELL_EDGE)
+
+          // day number
+          ctx.fillStyle = PEN_BLUE
+          ctx.font = `${FONT_SIZE}px monospace`
+          ctx.textBaseline = 'hanging'
+          ctx.fillText(day, FONT_SIZE / 2, FONT_SIZE / 2)
+
+          // render month  name
+          if (day <= 7 && j == 0) {
+            ctx.fillStyle = PEN_BLUE
+            const month = currentDate.getMonth()
+            const monthName = monthNames[month]
+            ctx.textAlign = 'right'
+            ctx.fillText(
+              monthName.substring(0, 3),
+              -FONT_SIZE / 1.5,
+              FONT_SIZE / 2
+            )
+          }
+
+          // # month border
+          /*
+          if (day <= 7) {
+            ctx.strokeStyle = MONTH_BORDER_COLOR
+            ctx.lineCap = 'square'
+            ctx.lineWidth = LINE_WIDTH * 3
+            ctx.beginPath()
+            
+            // - cell left border
+            if (j == 0) {
+              ctx.beginPath()
+              ctx.moveTo(-CELL_EDGE, 0)
+              ctx.lineTo(0, 0)
+            } else if (day === 1) {
+              ctx.moveTo(0, CELL_EDGE)
+              ctx.lineTo(0, 0)
+            }
+
+            // - cell top border
+            ctx.moveTo(0, 0)
+            ctx.lineTo(CELL_EDGE, 0)
+            ctx.stroke()
+
+          }
+          */
+
+          currentDate.setDate(day + 1)
+          ctx.restore()
+        }
+      }
+    }
+
+    window.onresize = function () {
+      const { innerWidth, innerHeight, devicePixelRatio } = window
+      canvas.width = innerWidth * devicePixelRatio
+      canvas.height = innerHeight * devicePixelRatio
+      canvas.style.width = `${innerWidth}px`
+      canvas.style.height = `${innerHeight}px`
+      render(devicePixelRatio)
+    }
+    window.onresize()
+    document.body.appendChild(canvas)
+  </script>
+</body>
+</html>
